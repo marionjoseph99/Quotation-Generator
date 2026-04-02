@@ -41,6 +41,8 @@ const data = {
     "• Flexible Discounting: Discounts beyond 40% of the original quote may result in a \"Simplified Quality\" output.\n" +
     "• Revision Policy: Includes 2 minor revision rounds. Major changes or extra revisions are billed separately.",
   downpaymentPercent: 50,
+  discount: 0,
+  _discountStr: "0",
 };
 
 const uiState = {
@@ -168,13 +170,15 @@ function importQuotation() {
 }
 
 function totals() {
-  const total = data.items.reduce((sum, item) => sum + item.qty * item.cost, 0);
+  const subtotal = data.items.reduce((sum, item) => sum + item.qty * item.cost, 0);
+  const discountAmount = Number(data.discount) || 0;
+  const total = subtotal - discountAmount;
   const downpayment = total * (Number(data.downpaymentPercent) / 100 || 0);
-  return { total, downpayment };
+  return { subtotal, total, downpayment, discountAmount };
 }
 
 function render(focusInfo) {
-  const { total, downpayment } = totals();
+  const { subtotal, total, downpayment, discountAmount } = totals();
   const app = document.getElementById("app");
   if (!app) return;
 
@@ -295,11 +299,19 @@ function render(focusInfo) {
             <h3 class="font-semibold text-slate-400 uppercase tracking-wider text-xs">Services</h3>
             <div class="space-y-3" id="items-forms">${itemsForms}</div>
             <button id="add-item" class="w-full text-amber-600 hover:text-amber-700 text-sm font-medium flex justify-center items-center gap-1 py-2 bg-amber-50 hover:bg-amber-100 rounded-lg transition-colors">＋ Add Row</button>
-            <div class="flex items-center justify-between bg-blue-50 p-3 rounded-lg border border-blue-100">
-              <span class="text-sm font-medium text-blue-900">Downpayment %</span>
-              <div class="flex items-center gap-2">
-                <input type="text" inputmode="numeric" name="downpaymentPercent" value="${data.downpaymentPercent}" class="w-16 p-1 text-center bg-white border border-blue-200 rounded-md text-sm outline-none focus:border-amber-500" />
-                <span class="text-sm font-bold text-blue-900">%</span>
+            <div class="space-y-2">
+              <div class="flex items-center justify-between bg-blue-50 p-3 rounded-lg border border-blue-100">
+                <span class="text-sm font-medium text-blue-900">Downpayment %</span>
+                <div class="flex items-center gap-2">
+                  <input type="text" inputmode="numeric" name="downpaymentPercent" value="${data.downpaymentPercent}" class="w-16 p-1 text-center bg-white border border-blue-200 rounded-md text-sm outline-none focus:border-amber-500" />
+                  <span class="text-sm font-bold text-blue-900">%</span>
+                </div>
+              </div>
+              <div class="flex items-center justify-between bg-red-50 p-3 rounded-lg border border-red-100">
+                <span class="text-sm font-medium text-red-900">Discount (₱)</span>
+                <div class="flex items-center gap-2">
+                  <input type="text" inputmode="decimal" name="discount" value="${data._discountStr !== undefined ? data._discountStr : data.discount}" class="w-24 p-1 text-right bg-white border border-red-200 rounded-md text-sm outline-none focus:border-amber-500" />
+                </div>
               </div>
             </div>
           </div>
@@ -394,6 +406,20 @@ function render(focusInfo) {
               </div>
 
               <div class="w-full flex flex-col border border-slate-200 rounded-xl overflow-hidden shadow-sm h-full">
+                ${discountAmount > 0 ? `
+                <div class="flex-1 flex flex-col justify-center px-4 py-2 bg-slate-50 border-b border-slate-200">
+                  <div class="flex justify-between items-center w-full">
+                    <span class="font-bold text-slate-500 text-xs uppercase tracking-wide">Subtotal</span>
+                    <span class="font-bold text-sm text-slate-600">${formatCurrency(subtotal)}</span>
+                  </div>
+                </div>
+                <div class="flex-1 flex flex-col justify-center px-4 py-2 bg-red-50 border-b border-slate-200">
+                  <div class="flex justify-between items-center w-full">
+                    <span class="font-bold text-red-600 text-xs uppercase tracking-wide">Discount</span>
+                    <span class="font-bold text-sm text-red-600">-${formatCurrency(discountAmount)}</span>
+                  </div>
+                </div>
+                ` : ''}
                 <div class="flex-1 flex flex-col justify-center px-4 py-3 bg-slate-50 border-b border-slate-200">
                   <div class="flex justify-between items-center w-full">
                     <span class="font-bold text-[#2c328a] text-xs uppercase tracking-wide">Downpayment (${data.downpaymentPercent}%)</span>
@@ -420,6 +446,12 @@ function render(focusInfo) {
                   </tr>
                 </thead>
                 <tbody class="divide-y divide-slate-200">${itemsRows}</tbody>
+                <tfoot class="text-sm font-bold text-slate-800">
+                  <tr class="text-base">
+                    <td colspan="3" class="px-3 py-2 text-right text-[#2c328a] uppercase tracking-wider">Grand Total</td>
+                    <td class="px-3 py-2 text-right bg-amber-100 text-amber-800">${formatCurrency(total)}</td>
+                  </tr>
+                </tfoot>
               </table>
             </div>
 
@@ -514,7 +546,15 @@ function wireEvents() {
     el.addEventListener("input", (e) => {
       const focusInfo = captureFocus(e.target);
       const { name, value } = e.target;
-      data[name] = value;
+
+      if (name === 'discount') {
+        data._discountStr = value;
+        const parsedValue = parseFloat(value);
+        data.discount = isNaN(parsedValue) ? 0 : parsedValue;
+      } else {
+        data[name] = value;
+      }
+      
       saveHistory();
       render(focusInfo);
     });
