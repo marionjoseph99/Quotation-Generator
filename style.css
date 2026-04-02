@@ -1,7 +1,12 @@
 /* Custom tweaks and print styling for the quotation generator */
 
+html {
+  color-scheme: light !important;
+}
+
 body {
-  background-color: #f1f5f9;
+  background-color: #f1f5f9 !important;
+  color-scheme: light !important;
 }
 
 @media print {

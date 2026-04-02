@@ -48,6 +48,7 @@ const uiState = {
   history: [],
   historyIndex: -1,
   revisionVersion: "1.0",
+  showQuotation: true,
 };
 
 function formatCurrency(amount) {
@@ -158,6 +159,10 @@ function render(focusInfo) {
   const app = document.getElementById("app");
   if (!app) return;
 
+  // Enforce light theme
+  document.documentElement.style.colorScheme = 'light';
+  document.body.style.backgroundColor = '#f1f5f9';
+
   const validServices = data.items.map(i => i.service).filter(Boolean);
   const generatedScopeText = validServices.length > 0 
     ? "This service includes:\n• " + validServices.join("\n• ")
@@ -217,26 +222,27 @@ function render(focusInfo) {
   app.innerHTML = `
     <div class="flex flex-col xl:flex-row gap-8">
       <div class="w-full xl:w-[450px] bg-white rounded-2xl shadow-xl border border-slate-200 overflow-hidden flex flex-col h-auto xl:h-[calc(100vh-4rem)] sticky top-8 print:hidden">
-        <div class="bg-slate-900 text-white p-6 flex flex-col gap-5 shrink-0">
+        <div class="bg-amber-50 text-slate-900 p-6 flex flex-col gap-5 shrink-0 border-b border-amber-200">
           <div class="flex flex-col gap-3">
-            <h2 class="text-xl font-bold">Quotation Setup</h2>
+            <h2 class="text-xl font-bold text-slate-900">Quotation Setup</h2>
             <div class="flex gap-2 flex-wrap">
               <button id="copy-img-btn" class="flex-1 min-w-max bg-blue-600 hover:bg-blue-500 text-white px-4 py-2 rounded-lg font-semibold transition-colors text-sm flex justify-center items-center gap-2">Copy Image</button>
               <button id="print-btn" class="flex-1 min-w-max bg-amber-500 hover:bg-amber-400 text-slate-900 px-4 py-2 rounded-lg font-semibold transition-colors text-sm">Print / PDF</button>
+              <button id="toggle-quote-btn" class="flex-1 min-w-max bg-purple-600 hover:bg-purple-500 text-white px-3 py-2 rounded-lg font-semibold transition-colors text-sm" title="Toggle quotation view">${uiState.showQuotation ? 'Hide' : 'Show'}</button>
               <button id="undo-btn" class="flex-1 min-w-max bg-slate-700 hover:bg-slate-600 text-white px-3 py-2 rounded-lg font-semibold transition-colors text-sm" title="Undo">↶</button>
               <button id="redo-btn" class="flex-1 min-w-max bg-slate-700 hover:bg-slate-600 text-white px-3 py-2 rounded-lg font-semibold transition-colors text-sm" title="Redo">↷</button>
               <button id="export-btn" class="flex-1 min-w-max bg-green-600 hover:bg-green-500 text-white px-3 py-2 rounded-lg font-semibold transition-colors text-sm">Save</button>
               <button id="import-btn" class="flex-1 min-w-max bg-green-600 hover:bg-green-500 text-white px-3 py-2 rounded-lg font-semibold transition-colors text-sm">Load</button>
             </div>
           </div>
-          <div class="bg-slate-800 rounded-xl p-4 flex justify-between items-center border border-slate-700/50 shadow-inner">
+          <div class="bg-white rounded-xl p-4 flex justify-between items-center border border-amber-200 shadow-sm">
             <div>
-              <p class="text-slate-400 text-xs uppercase tracking-wider font-semibold mb-1">Grand Total</p>
-              <p class="text-2xl font-bold text-amber-400">${formatCurrency(total)}</p>
+              <p class="text-slate-500 text-xs uppercase tracking-wider font-semibold mb-1">Grand Total</p>
+              <p class="text-2xl font-bold text-amber-600">${formatCurrency(total)}</p>
             </div>
             <div class="text-right">
-              <p class="text-slate-400 text-xs uppercase tracking-wider font-semibold mb-1">Downpayment (${data.downpaymentPercent}%)</p>
-              <p class="text-lg font-bold text-white">${formatCurrency(downpayment)}</p>
+              <p class="text-slate-500 text-xs uppercase tracking-wider font-semibold mb-1">Downpayment (${data.downpaymentPercent}%)</p>
+              <p class="text-lg font-bold text-slate-900">${formatCurrency(downpayment)}</p>
             </div>
           </div>
         </div>
@@ -314,7 +320,7 @@ function render(focusInfo) {
         </div>
       </div>
 
-  <div class="flex-1 flex justify-center items-start print:w-full print:m-0 print:block">
+  <div class="flex-1 flex justify-center items-start print:w-full print:m-0 print:block" style="display: ${uiState.showQuotation ? 'flex' : 'none'}">
         <div id="quotation-print-area" class="bg-white w-full max-w-[210mm] min-h-fit h-auto shadow-2xl print:shadow-none print:w-[210mm] print:h-auto flex flex-col relative box-border mx-auto overflow-hidden text-slate-800">
           <div class="h-3 w-full bg-amber-500"></div>
           <div class="p-8 flex-1 flex flex-col">
@@ -469,6 +475,14 @@ function wireEvents() {
   const importBtn = app.querySelector("#import-btn");
   if (importBtn) {
     importBtn.addEventListener("click", importQuotation);
+  }
+
+  const toggleQuoteBtn = app.querySelector("#toggle-quote-btn");
+  if (toggleQuoteBtn) {
+    toggleQuoteBtn.addEventListener("click", () => {
+      uiState.showQuotation = !uiState.showQuotation;
+      render();
+    });
   }
 
   app.querySelectorAll("input[name], textarea[name]").forEach((el) => {
