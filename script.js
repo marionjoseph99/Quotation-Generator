@@ -111,6 +111,24 @@ function redo() {
   }
 }
 
+function saveAsPng() {
+  const quoteElement = document.getElementById("quotation-print-area");
+  if (quoteElement) {
+    html2canvas(quoteElement, {
+      scale: 2, // Higher scale for better quality
+      useCORS: true,
+      logging: true,
+      allowTaint: true,
+    }).then(canvas => {
+      const a = document.createElement('a');
+      a.href = canvas.toDataURL("image/png");
+      const safeCustomerName = (data.customerName || 'quotation').replace(/[^a-z0-9]/gi, '_').toLowerCase();
+      a.download = `${safeCustomerName}_${data.quotationNumber}.png`;
+      a.click();
+    });
+  }
+}
+
 function exportQuotation() {
   const exportData = { data, revisionVersion: uiState.revisionVersion };
   const json = JSON.stringify(exportData, null, 2);
@@ -118,7 +136,8 @@ function exportQuotation() {
   const url = URL.createObjectURL(blob);
   const a = document.createElement("a");
   a.href = url;
-  a.download = `quotation-${data.quotationNumber}-v${uiState.revisionVersion}.json`;
+  const safeCustomerName = (data.customerName || 'quotation').replace(/[^a-z0-9]/gi, '_').toLowerCase();
+  a.download = `quotation-${safeCustomerName}-v${uiState.revisionVersion}.json`;
   a.click();
   URL.revokeObjectURL(url);
 }
@@ -226,13 +245,14 @@ function render(focusInfo) {
           <div class="flex flex-col gap-3">
             <h2 class="text-xl font-bold text-slate-900">Quotation Setup</h2>
             <div class="flex gap-2 flex-wrap">
-              <button id="copy-img-btn" class="flex-1 min-w-max bg-blue-600 hover:bg-blue-500 text-white px-4 py-2 rounded-lg font-semibold transition-colors text-sm flex justify-center items-center gap-2">Copy Image</button>
-              <button id="print-btn" class="flex-1 min-w-max bg-amber-500 hover:bg-amber-400 text-slate-900 px-4 py-2 rounded-lg font-semibold transition-colors text-sm">Print / PDF</button>
-              <button id="toggle-quote-btn" class="flex-1 min-w-max bg-purple-600 hover:bg-purple-500 text-white px-3 py-2 rounded-lg font-semibold transition-colors text-sm" title="Toggle quotation view">${uiState.showQuotation ? 'Hide' : 'Show'}</button>
-              <button id="undo-btn" class="flex-1 min-w-max bg-slate-700 hover:bg-slate-600 text-white px-3 py-2 rounded-lg font-semibold transition-colors text-sm" title="Undo">↶</button>
-              <button id="redo-btn" class="flex-1 min-w-max bg-slate-700 hover:bg-slate-600 text-white px-3 py-2 rounded-lg font-semibold transition-colors text-sm" title="Redo">↷</button>
-              <button id="export-btn" class="flex-1 min-w-max bg-green-600 hover:bg-green-500 text-white px-3 py-2 rounded-lg font-semibold transition-colors text-sm">Save</button>
-              <button id="import-btn" class="flex-1 min-w-max bg-green-600 hover:bg-green-500 text-white px-3 py-2 rounded-lg font-semibold transition-colors text-sm">Load</button>
+              <button id="copy-img-btn" class="flex-1 min-w-max bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg font-semibold transition-colors text-sm flex justify-center items-center gap-2">Copy Image</button>
+              <button id="save-png-btn" class="flex-1 min-w-max bg-amber-500 hover:bg-amber-600 text-white px-4 py-2 rounded-lg font-semibold transition-colors text-sm">Save as PNG</button>
+              <button id="print-btn" class="flex-1 min-w-max bg-amber-500 hover:bg-amber-600 text-white px-4 py-2 rounded-lg font-semibold transition-colors text-sm">Print / PDF</button>
+              <button id="toggle-quote-btn" class="flex-1 min-w-max bg-blue-600 hover:bg-blue-700 text-white px-3 py-2 rounded-lg font-semibold transition-colors text-sm" title="Toggle quotation view">${uiState.showQuotation ? 'Hide' : 'Show'}</button>
+              <button id="undo-btn" class="flex-1 min-w-max bg-slate-600 hover:bg-slate-700 text-white px-3 py-2 rounded-lg font-semibold transition-colors text-sm" title="Undo">↶</button>
+              <button id="redo-btn" class="flex-1 min-w-max bg-slate-600 hover:bg-slate-700 text-white px-3 py-2 rounded-lg font-semibold transition-colors text-sm" title="Redo">↷</button>
+              <button id="export-btn" class="flex-1 min-w-max bg-blue-600 hover:bg-blue-700 text-white px-3 py-2 rounded-lg font-semibold transition-colors text-sm">Save</button>
+              <button id="import-btn" class="flex-1 min-w-max bg-amber-500 hover:bg-amber-600 text-white px-3 py-2 rounded-lg font-semibold transition-colors text-sm">Load</button>
             </div>
           </div>
           <div class="bg-white rounded-xl p-4 flex justify-between items-center border border-amber-200 shadow-sm">
@@ -465,6 +485,11 @@ function wireEvents() {
   const redoBtn = app.querySelector("#redo-btn");
   if (redoBtn) {
     redoBtn.addEventListener("click", redo);
+  }
+
+  const savePngBtn = app.querySelector("#save-png-btn");
+  if (savePngBtn) {
+    savePngBtn.addEventListener("click", saveAsPng);
   }
 
   const exportBtn = app.querySelector("#export-btn");
